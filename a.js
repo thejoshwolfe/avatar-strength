@@ -50,14 +50,15 @@ function cellIsPushingCell(cell) {
   return pushingCell != null && pushingCell.toString() === cell.toString();
 }
 var keyStates = {};
+var UP = 38, LEFT = 37, DOWN = 40, RIGHT = 39;
 function handleKey(event, direction) {
-  var key = String.fromCharCode(event.which);
+  var key = event.which;
   var lookingCell = manPosition.slice(0);
   switch (key) {
-    case "W": lookingCell[1]--; break;
-    case "A": lookingCell[0]--; break;
-    case "S": lookingCell[1]++; break;
-    case "D": lookingCell[0]++; break;
+    case UP:    lookingCell[1]--; break;
+    case LEFT:  lookingCell[0]--; break;
+    case DOWN:  lookingCell[1]++; break;
+    case RIGHT: lookingCell[0]++; break;
     default: return;
   }
   event.preventDefault();
