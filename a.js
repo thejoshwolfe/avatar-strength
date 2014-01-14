@@ -32,6 +32,9 @@ function physicsStep() {
       // broken
       holes[pushingCell] = 1;
       experience += cellStrength;
+      manPosition = pushingCell;
+      pushingCell = null;
+      pushProgress = null;
       if (experience >= nextLevel) {
         // level up
         experience -= nextLevel;
@@ -94,39 +97,65 @@ function render() {
   context.fillStyle = "#000";
   context.fillRect(0, 0, canvas.width, canvas.height);
 
-  var gridSize = [
-    canvas.height,
-    canvas.height,
-  ];
-  var screenOffset = gridSize.map(function(pixel) { return -pixel / 2; });
-  var sizeInCells = gridSize.map(function(pixel) { return pixel / cellSize; });
-  function cellToPixel(position) {
-    return position.map(function(cell, i) {
-      return (cell-manPosition[i]) * cellSize - screenOffset[i];
-    });
-  }
-  function pixelToCell(position) {
-    return position.map(function(pixel, i) {
-      return Math.floor((pixel + screenOffset[i])/cellSize) + manPosition[i];
-    });
-  }
+  var statusLeft;
 
-  var renderStartCell = pixelToCell([0,0]);
-  var renderStopCell = pixelToCell(gridSize);
-
-  var cell = [];
-  for (cell[1] = renderStartCell[1]; cell[1] <= renderStopCell[1]; cell[1]++) {
-    for (cell[0] = renderStartCell[0]; cell[0] <= renderStopCell[0]; cell[0]++) {
-      var pixel = cellToPixel(cell);
-      context.fillStyle = holes[cell] ? "#000" : getCellColor(cell);
-      context.fillRect(pixel[0]+1, pixel[1]+1, cellSize-2, cellSize-2);
+  (function drawGrid() {
+    var gridSize = [
+      canvas.height,
+      canvas.height,
+    ];
+    statusLeft = gridSize[1];
+    var screenOffset = gridSize.map(function(pixel) { return -pixel / 2; });
+    var sizeInCells = gridSize.map(function(pixel) { return pixel / cellSize; });
+    function cellToPixel(position) {
+      return position.map(function(cell, i) {
+        return (cell-manPosition[i]) * cellSize - screenOffset[i];
+      });
     }
-  }
+    function pixelToCell(position) {
+      return position.map(function(pixel, i) {
+        return Math.floor((pixel + screenOffset[i])/cellSize) + manPosition[i];
+      });
+    }
 
-  context.fillStyle = "#fff";
-  context.font = (cellSize-2) + "pt Calibri";
-  var manPixel = cellToPixel(manPosition);
-  context.fillText("\u263b", manPixel[0], manPixel[1] + cellSize);
+    var renderStartCell = pixelToCell([0,0]);
+    var renderStopCell = pixelToCell(gridSize);
+
+    var cell = [];
+    for (cell[1] = renderStartCell[1]; cell[1] < renderStopCell[1]; cell[1]++) {
+      for (cell[0] = renderStartCell[0]; cell[0] < renderStopCell[0]; cell[0]++) {
+        var pixel = cellToPixel(cell);
+        context.fillStyle = holes[cell] ? "#000" : getCellColor(cell);
+        context.fillRect(pixel[0]+1, pixel[1]+1, cellSize-2, cellSize-2);
+      }
+    }
+
+    context.fillStyle = "#fff";
+    context.font = (cellSize-2) + "pt Calibri";
+    var manPixel = cellToPixel(manPosition);
+    context.fillText("\u263b", manPixel[0], manPixel[1] + cellSize);
+  })();
+
+  (function drawStatus() {
+    var width = canvas.width - statusLeft;
+    var fontSize = 15;
+    var verticalCursor = 0;
+
+    context.font = fontSize + "pt Calibri";
+    verticalCursor += fontSize;
+    context.fillText("Status", statusLeft, verticalCursor);
+
+    verticalCursor += fontSize * 1.5;
+    context.fillText("Level " + experienceLevel, statusLeft, verticalCursor);
+
+    verticalCursor += fontSize * 2;
+    context.fillText("Next Level:", statusLeft, verticalCursor);
+
+    var experienceBarHeight = 10;
+    verticalCursor += 0.5 * experienceBarHeight;
+    context.fillRect(statusLeft, verticalCursor, width * experience / nextLevel, experienceBarHeight);
+    verticalCursor += experienceBarHeight;
+  })();
 }
 
 
