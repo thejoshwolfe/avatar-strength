@@ -3,13 +3,15 @@ requestAnimationFrame(update);
 
 var cellSize = 20;
 
-var manPosition, holes, experience;
+var manPosition, holes, experience, experienceLevel, nextLevel;
 reset();
 function reset() {
   manPosition = [0,0];
   holes = {};
   holes[manPosition] = 1;
   experience = 0;
+  experienceLevel = 1;
+  nextLevel = 10;
 }
 
 function update() {
@@ -22,8 +24,61 @@ function physicsStep() {
   var now = new Date();
   var dt = now - lastPhysicsTime;
   lastPhysicsTime = now;
+
+  if (pushingCell != null) {
+    pushProgress += dt * experienceLevel / 1000;
+    var cellStrength = getCellStrength(pushingCell);
+    if (pushProgress >= getCellStrength(pushingCell)) {
+      // broken
+      holes[pushingCell] = 1;
+      experience += cellStrength;
+      if (experience >= nextLevel) {
+        // level up
+        experience -= nextLevel;
+        experienceLevel += 1;
+        nextLevel *= 2;
+      }
+    }
+  }
+}
+var pushingCell = null;
+var pushProgress = null;
+var keyStates = {};
+function handleKey(event, direction) {
+  var key = String.fromCharCode(event.which);
+  var lookingCell = manPosition.slice(0);
+  switch (key) {
+    case "W": lookingCell[1]--; break;
+    case "A": lookingCell[0]--; break;
+    case "S": lookingCell[1]++; break;
+    case "D": lookingCell[0]++; break;
+    default: return;
+  }
+  event.preventDefault();
+  if (keyStates[key] === direction) return;
+  keyStates[key] = direction;
+  if (direction === "up") {
+    if (pushingCell != null && pushingCell.toString() === lookingCell.toString()) {
+      // let go of that cell
+      pushingCell = null;
+      pushProgress = null;
+    }
+  } else {
+    if (holes[lookingCell]) {
+      // move
+      manPosition = lookingCell;
+    } else if (pushingCell === null) {
+      // start pushing
+      pushingCell = lookingCell;
+      pushProgress = 0;
+    }
+  }
 }
 
+function getCellStrength(cell) {
+  var distance = cell[0]*cell[0] + cell[1]*cell[1];
+  return Math.min(4, distance.toString().length);
+}
 function getCellColor(cell) {
   var distance = cell[0]*cell[0] + cell[1]*cell[1];
   switch (distance.toString().length) {
@@ -77,11 +132,9 @@ function render() {
 
 document.onkeydown = keyDown;
 function keyDown(event) {
-  var key = String.fromCharCode(event.which);
-  switch (key) {
-    case "W": manPosition[1]--; break;
-    case "A": manPosition[0]--; break;
-    case "S": manPosition[1]++; break;
-    case "D": manPosition[0]++; break;
-  }
+  handleKey(event, "down");
+}
+document.onkeyup = keyUp;
+function keyUp(event) {
+  handleKey(event, "up");
 }
