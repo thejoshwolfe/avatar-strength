@@ -11,7 +11,7 @@ function reset() {
   holes[manPosition] = 1;
   experience = 0;
   experienceLevel = 1;
-  nextLevel = 10;
+  nextLevel = 5;
 }
 
 function update() {
@@ -46,6 +46,9 @@ function physicsStep() {
 }
 var pushingCell = null;
 var pushProgress = null;
+function cellIsPushingCell(cell) {
+  return pushingCell != null && pushingCell.toString() === cell.toString();
+}
 var keyStates = {};
 function handleKey(event, direction) {
   var key = String.fromCharCode(event.which);
@@ -61,7 +64,7 @@ function handleKey(event, direction) {
   if (keyStates[key] === direction) return;
   keyStates[key] = direction;
   if (direction === "up") {
-    if (pushingCell != null && pushingCell.toString() === lookingCell.toString()) {
+    if (cellIsPushingCell(lookingCell)) {
       // let go of that cell
       pushingCell = null;
       pushProgress = null;
@@ -127,6 +130,19 @@ function render() {
         var pixel = cellToPixel(cell);
         context.fillStyle = holes[cell] ? "#000" : getCellColor(cell);
         context.fillRect(pixel[0]+1, pixel[1]+1, cellSize-2, cellSize-2);
+
+        if (cellIsPushingCell(cell)) {
+          // draw a pie chart of progress
+          var radius = cellSize / 3;
+          var center = pixel.map(function(x) { return x + cellSize/2; });
+          context.fillStyle = "#000";
+          context.beginPath();
+          context.moveTo(center[0], center[1]);
+          var angle = pushProgress / getCellStrength(pushingCell) * 2 * Math.PI - Math.PI/2;
+          context.arc(center[0], center[1], radius, -Math.PI/2, angle);
+          context.lineTo(center[0], center[1]);
+          context.fill();
+        }
       }
     }
 
